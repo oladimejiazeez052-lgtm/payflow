@@ -167,7 +167,7 @@ export default function SettingsPanel({
                 Profile Settings
               </h3>
 
-              <form onSubmit={handleSaveProfile} className="space-y-6">
+              <form onSubmit={handleSaveProfile} noValidate className="space-y-6">
                 
                 {/* Profile Avatar / Hero Banner */}
                 <div className="flex flex-col sm:flex-row items-center gap-6">
@@ -291,7 +291,7 @@ export default function SettingsPanel({
                   Sandbox Configuration
                 </h3>
 
-                <form onSubmit={handleSaveSandbox} className="space-y-6">
+                <form onSubmit={handleSaveSandbox} noValidate className="space-y-6">
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     
@@ -418,7 +418,7 @@ export default function SettingsPanel({
                 Security &amp; API Keys
               </h3>
 
-              <form onSubmit={handleUpdateSecurity} className="space-y-6">
+              <form onSubmit={handleUpdateSecurity} noValidate className="space-y-6">
                 
                 {/* Password modification */}
                 <div className="space-y-4">

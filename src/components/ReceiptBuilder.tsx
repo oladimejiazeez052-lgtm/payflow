@@ -221,7 +221,7 @@ export default function ReceiptBuilder({
           <p className="text-slate-400 dark:text-slate-450 text-xs">Simulate professional client invoices and transaction slips instantly.</p>
         </div>
 
-        <form onSubmit={handleCompileReceiptSubmit} className="space-y-4 text-xs">
+        <form onSubmit={handleCompileReceiptSubmit} noValidate className="space-y-4 text-xs">
           
           {successMsg && (
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/25 text-emerald-800 dark:text-emerald-400 rounded-xl font-semibold border border-emerald-100 dark:border-emerald-900/40 flex items-center gap-2">
@@ -456,6 +456,7 @@ export default function ReceiptBuilder({
                 type="number"
                 min="0"
                 max="50"
+                step="any"
                 value={taxPercent}
                 onChange={(e) => setTaxPercent(e.target.value)}
                 className="px-3 py-2 w-full border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 rounded-xl transition"

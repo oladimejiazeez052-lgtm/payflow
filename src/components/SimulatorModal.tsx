@@ -116,7 +116,7 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4">
 
           {/* Error Message */}
           {errorText && (
@@ -207,7 +207,7 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
                 <input
                   id="amount-val"
                   type="number"
-                  step="0.01"
+                  step="any"
                   required
                   placeholder="0.00"
                   value={amountInput}

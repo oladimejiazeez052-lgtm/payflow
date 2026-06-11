@@ -105,7 +105,7 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
             </div>
 
             <div className="bg-white border border-slate-200 shadow-xl rounded-2xl p-6 md:p-8">
-              <form onSubmit={handleLoginDemo} className="space-y-4 text-xs">
+              <form onSubmit={handleLoginDemo} noValidate className="space-y-4 text-xs">
                 
                 <div className="space-y-1">
                   <label htmlFor="login-email" className="font-semibold text-slate-500 uppercase tracking-wider block">Email Address</label>
@@ -214,7 +214,7 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmitRegister} className="space-y-3.5 text-xs">
+                <form onSubmit={handleSubmitRegister} noValidate className="space-y-3.5 text-xs">
                   
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
