@@ -1,0 +1,6 @@
+{
+  "name": "PayFlow Demo",
+  "description": "Simulate, train, and prototype financial flows safely.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
