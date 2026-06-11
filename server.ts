@@ -13,8 +13,43 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// In-Memory Database Store for Simulators
-let transactions: SimulatedTransaction[] = [
+// Local File Database Store for persistent simulations
+import fs from 'fs';
+
+const DATA_DIR = path.join(process.cwd(), 'data');
+const TRANSACTIONS_FILE = path.join(DATA_DIR, 'transactions.json');
+const AUDIT_LOGS_FILE = path.join(DATA_DIR, 'audit_logs.json');
+const RECEIPTS_FILE = path.join(DATA_DIR, 'receipts.json');
+
+// Ensure data folder exists
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+function loadData<T>(filePath: string, defaultValue: T): T {
+  try {
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, 'utf8');
+      return JSON.parse(content) as T;
+    } else {
+      // Persist the default values immediately on startup so files exist on disk to be inspected/edited
+      fs.writeFileSync(filePath, JSON.stringify(defaultValue, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.error(`Failed to load persistent data from ${filePath}:`, err);
+  }
+  return defaultValue;
+}
+
+function saveData<T>(filePath: string, data: T) {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (err) {
+    console.error(`Failed to persist data to ${filePath}:`, err);
+  }
+}
+
+const defaultTransactions: SimulatedTransaction[] = [
   {
     id: "ZEL-9283ADFF",
     timestamp: "2026-06-05T09:54:00Z",
@@ -77,7 +112,7 @@ let transactions: SimulatedTransaction[] = [
   }
 ];
 
-let auditLogs: AuditLog[] = [
+const defaultAuditLogs: AuditLog[] = [
   {
     id: "AUD-INIT",
     timestamp: "2026-06-05T15:25:52Z",
@@ -96,7 +131,7 @@ let auditLogs: AuditLog[] = [
   }
 ];
 
-let receipts: Receipt[] = [
+const defaultReceipts: Receipt[] = [
   {
     id: "REC-9283ADFF",
     transactionId: "ZEL-9283ADFF",
@@ -127,6 +162,10 @@ let receipts: Receipt[] = [
   }
 ];
 
+let transactions: SimulatedTransaction[] = loadData(TRANSACTIONS_FILE, defaultTransactions);
+let auditLogs: AuditLog[] = loadData(AUDIT_LOGS_FILE, defaultAuditLogs);
+let receipts: Receipt[] = loadData(RECEIPTS_FILE, defaultReceipts);
+
 // Helper to write to audit log
 function writeAuditLog(actionType: string, details: string, email = "oladimejiazeez052@gmail.com", ip = "127.0.0.1") {
   const log: AuditLog = {
@@ -138,6 +177,7 @@ function writeAuditLog(actionType: string, details: string, email = "oladimejiaz
     ipHash: ip
   };
   auditLogs.unshift(log);
+  saveData(AUDIT_LOGS_FILE, auditLogs);
 }
 
 // Helper to generate transaction ID matching blueprint conventions
@@ -181,6 +221,7 @@ app.post('/api/transactions', (req, res) => {
   };
 
   transactions.unshift(newTx);
+  saveData(TRANSACTIONS_FILE, transactions);
   
   writeAuditLog(
     "Insert Simulation", 
@@ -192,6 +233,7 @@ app.post('/api/transactions', (req, res) => {
 
 app.delete('/api/transactions', (req, res) => {
   transactions = [];
+  saveData(TRANSACTIONS_FILE, transactions);
   writeAuditLog("Clear Simulator Local State", "Cleared all simulated payments array storage.");
   res.json({ success: true, transactions });
 });
@@ -239,6 +281,7 @@ app.post('/api/transactions/reset', (req, res) => {
       note: "Developer workstation upgrade"
     }
   ];
+  saveData(TRANSACTIONS_FILE, transactions);
   writeAuditLog("Reset Simulator", "Reseeded the initial financial simulation table history.");
   res.json({ success: true, transactions });
 });
@@ -271,6 +314,7 @@ app.post('/api/receipts', (req, res) => {
   };
 
   receipts.unshift(newReceipt);
+  saveData(RECEIPTS_FILE, receipts);
   
   writeAuditLog(
     "Compile Receipt Layout",
@@ -293,6 +337,7 @@ app.post('/api/generate-scenario', async (req, res) => {
       // Graceful local generator if key is placeholder or missing
       const mockResult = generateLocalMockFallback(prompt);
       transactions.unshift(...mockResult);
+      saveData(TRANSACTIONS_FILE, transactions);
       writeAuditLog("System AI Generated Fallback", `Prompt: "${prompt}" - Generated ${mockResult.length} transactions locally. (No Gemini API Key specified)`);
       return res.json({ transactions: mockResult, note: "Generated using pre-designed fallback matching scenario prompts because no Gemini API Key is configured." });
     }
@@ -381,6 +426,7 @@ Provide your response strictly in JSON format as per the schema specification. N
     });
 
     transactions.unshift(...filteredList);
+    saveData(TRANSACTIONS_FILE, transactions);
     
     writeAuditLog(
       "AI Scenario Engine Injection", 

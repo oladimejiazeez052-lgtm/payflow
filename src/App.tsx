@@ -34,7 +34,8 @@ export default function App() {
 
   // Dynamic Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    return (localStorage.getItem('payflow_theme') as 'light' | 'dark') || 'light';
+    const saved = localStorage.getItem('payflow_theme');
+    return (saved === 'light' || saved === 'dark') ? saved : 'light';
   });
 
   // Dynamic Auth State with persistent local storage
@@ -42,8 +43,18 @@ export default function App() {
     return localStorage.getItem('payflow_logged_in') === 'true';
   });
   const [workspace, setWorkspace] = useState<UserWorkspace | null>(() => {
-    const saved = localStorage.getItem('payflow_workspace');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('payflow_workspace');
+      if (!saved || saved === 'undefined' || saved === 'null') {
+        return null;
+      }
+      return JSON.parse(saved);
+    } catch (err) {
+      console.error('[PayFlow] Failed to parse workspace localStorage state:', err);
+      localStorage.removeItem('payflow_workspace');
+      localStorage.removeItem('payflow_logged_in');
+      return null;
+    }
   });
 
   const handleOnboardingComplete = (ws: UserWorkspace) => {
