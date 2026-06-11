@@ -120,9 +120,16 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
 
           {/* Error Message */}
           {errorText && (
-            <div className="p-3 bg-red-50 text-red-700 rounded-xl text-xs font-semibold flex items-center gap-2 border border-red-100 animate-shake">
-              <span className="material-symbols-outlined">error</span>
-              {errorText}
+            <div className="space-y-2">
+              <div className="p-3 bg-red-50 text-red-700 rounded-xl text-xs font-semibold flex items-start gap-2 border border-red-100 animate-shake">
+                <span className="material-symbols-outlined text-[16px] mt-0.5">error</span>
+                <div className="space-y-1">
+                  <p>{errorText}</p>
+                  <p className="text-[10px] text-red-600 font-normal leading-normal">
+                    💡 <strong>Tip:</strong> If you see a cached network JSON error, please perform a <strong>browser hard refresh (Ctrl + F5 or Cmd + Shift + R)</strong>. This forces the sandbox browser to clear any cached proxy layers.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
