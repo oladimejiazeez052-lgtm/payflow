@@ -404,6 +404,7 @@ export default function App() {
                     transactions={transactions}
                     currency={workspace.currency}
                     businessName={workspace.businessName}
+                    onAddTransaction={handleSimulateTransactionSubmit}
                   />
                 )}
 
