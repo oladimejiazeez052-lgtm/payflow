@@ -13,6 +13,16 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Request logging middleware to diagnose 404s and errors
+app.use((req, res, next) => {
+  const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)}\n`;
+  console.log(logMsg.trim());
+  try {
+    fs.appendFileSync(path.join(DATA_DIR, 'server_logs.txt'), logMsg, 'utf8');
+  } catch (err) {}
+  next();
+});
+
 // Local File Database Store for persistent simulations
 import fs from 'fs';
 
@@ -555,7 +565,10 @@ async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     // Integrate Vite middleware in dev
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { 
+        middlewareMode: true,
+        hmr: false
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);
