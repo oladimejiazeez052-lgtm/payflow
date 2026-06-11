@@ -261,7 +261,6 @@ export default function ReceiptBuilder({
               <label className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider block">Merchant Name</label>
               <input
                 type="text"
-                required
                 value={merchantName}
                 onChange={(e) => {
                   setMerchantName(e.target.value);
@@ -430,8 +429,8 @@ export default function ReceiptBuilder({
                 className="px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none rounded-lg text-xs flex-1"
               />
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 placeholder="$ Price"
                 value={newItemPrice}
                 onChange={(e) => setNewItemPrice(e.target.value)}
@@ -453,10 +452,8 @@ export default function ReceiptBuilder({
             <div className="space-y-1">
               <label className="text-slate-500 font-semibold uppercase tracking-wider block">Simulated Sales Tax Percent (%)</label>
               <input
-                type="number"
-                min="0"
-                max="50"
-                step="any"
+                type="text"
+                inputMode="decimal"
                 value={taxPercent}
                 onChange={(e) => setTaxPercent(e.target.value)}
                 className="px-3 py-2 w-full border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 rounded-xl transition"

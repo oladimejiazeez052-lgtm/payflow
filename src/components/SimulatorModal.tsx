@@ -28,15 +28,15 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
   const getCashAppUrl = () => {
     const clean = receiver.trim();
     if (!clean) return 'https://cash.app';
-    if (clean.startsWith('$')) return `https://cash.app/${clean}`;
-    return `https://cash.app/$${clean}`;
+    const target = clean.startsWith('$') ? clean : `$${clean}`;
+    return `https://cash.app/${encodeURIComponent(target)}`;
   };
 
   const getVenmoUrl = () => {
     const clean = receiver.trim();
     if (!clean) return 'https://venmo.com';
-    if (clean.startsWith('@')) return `https://venmo.com/u/${clean.slice(1)}`;
-    return `https://venmo.com/u/${clean}`;
+    const target = clean.startsWith('@') ? clean.slice(1) : clean;
+    return `https://venmo.com/u/${encodeURIComponent(target)}`;
   };
 
   // Auto handle default name switches when user toggles flow direction
@@ -140,7 +140,6 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
               <input
                 id="sender-txt"
                 type="text"
-                required
                 value={sender}
                 onChange={(e) => setSender(e.target.value)}
                 className="px-3.5 py-2 w-full border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 text-xs rounded-xl font-medium transition"
@@ -174,7 +173,6 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
               <input
                 id="receiver-txt"
                 type="text"
-                required
                 value={receiver}
                 onChange={(e) => setReceiver(e.target.value)}
                 placeholder="e.g. Wesley Jeffrey"
@@ -206,9 +204,8 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
                 <input
                   id="amount-val"
-                  type="number"
-                  step="any"
-                  required
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0.00"
                   value={amountInput}
                   onChange={(e) => setAmountInput(e.target.value)}
@@ -240,7 +237,6 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
             <input
               id="note-txt"
               type="text"
-              required
               placeholder="e.g. Giveaway Cash"
               value={note}
               onChange={(e) => setNote(e.target.value)}
