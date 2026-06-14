@@ -5,7 +5,8 @@ import {
   fetchAuditLogs, 
   fetchReceipts, 
   createSimulatedTransaction, 
-  resetTransactionsStore 
+  resetTransactionsStore,
+  saveProfileOnServer
 } from './utils';
 
 // Import subcomponents
@@ -140,6 +141,9 @@ export default function App() {
           if (i !== -1) {
             profiles[i].currentBalance = updatedBalance;
             localStorage.setItem('payflow_profiles', JSON.stringify(profiles));
+            saveProfileOnServer(profiles[i]).catch(err => {
+              console.error("Failed to sync decremented balance to server", err);
+            });
           }
         } catch (err) {
           console.error("Failed to reduce profile balance in localStorage", err);
@@ -188,6 +192,9 @@ export default function App() {
             if (i !== -1) {
               profiles[i].currentBalance = updatedBalance;
               localStorage.setItem('payflow_profiles', JSON.stringify(profiles));
+              saveProfileOnServer(profiles[i]).catch(err => {
+                console.error("Failed to sync AI generated balance reduction to server", err);
+              });
             }
           } catch (err) {
             console.error("Failed to update scenario profiles", err);
@@ -487,7 +494,7 @@ export default function App() {
                 )}
 
                 {activeTab === 'audits' && (
-                   <AuditLedger auditLogs={auditLogs} />
+                   <AuditLedger auditLogs={auditLogs} userEmail={workspace.email} />
                 )}
 
                 {activeTab === 'alerts' && (
@@ -535,7 +542,7 @@ export default function App() {
 
       {/* Footer bar stating copyright & disclaimer status */}
       <footer className="bg-white border-t border-slate-100 py-4 px-6 text-center text-[10px] text-slate-400 z-20 font-medium">
-        © 2026 PayFlow Simulation Frameworks. All rights reserved. • Licensed and secured by oladimejiazeez052@gmail.com
+        © 2026 PayFlow Simulation Frameworks. All rights reserved. • Licensed and secured by abcdefg@gmail.com
       </footer>
 
     </div>

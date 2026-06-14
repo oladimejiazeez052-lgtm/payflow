@@ -205,6 +205,53 @@ function generateClientScenarioTx(prompt: string): SimulatedTransaction[] {
 function handleClientFallbackRequest(url: string, options?: RequestInit): any {
   console.log(`[PayFlow Fallback DB] Intercepting: ${url}`);
   
+  if (url.includes('/api/profiles')) {
+    const savedProfiles = getLocalData<any[]>('payflow_profiles', []);
+    
+    if (url.includes('/sync') && options?.method === 'POST') {
+      const clientProfiles = JSON.parse(options.body as string);
+      if (Array.isArray(clientProfiles)) {
+        clientProfiles.forEach(cp => {
+          if (!cp || !cp.email) return;
+          const email = cp.email.trim().toLowerCase();
+          const idx = savedProfiles.findIndex(p => p.email.trim().toLowerCase() === email);
+          if (idx !== -1) {
+            savedProfiles[idx] = { ...savedProfiles[idx], ...cp, email };
+          } else {
+            savedProfiles.push({ ...cp, email });
+          }
+        });
+        saveLocalData('payflow_profiles', savedProfiles);
+      }
+      return { success: true, profiles: savedProfiles };
+    }
+
+    if (options?.method === 'POST') {
+      const newProfile = JSON.parse(options.body as string);
+      if (newProfile && newProfile.email) {
+        const email = newProfile.email.trim().toLowerCase();
+        const idx = savedProfiles.findIndex(p => p.email.trim().toLowerCase() === email);
+        if (idx !== -1) {
+          savedProfiles[idx] = { ...savedProfiles[idx], ...newProfile, email };
+        } else {
+          savedProfiles.unshift({ ...newProfile, email });
+        }
+        saveLocalData('payflow_profiles', savedProfiles);
+      }
+      return { success: true, profiles: savedProfiles };
+    }
+
+    if (options?.method === 'DELETE') {
+      const parts = url.split('/');
+      const email = decodeURIComponent(parts[parts.length - 1]).trim().toLowerCase();
+      const filtered = savedProfiles.filter(p => p.email.trim().toLowerCase() !== email);
+      saveLocalData('payflow_profiles', filtered);
+      return { success: true, profiles: filtered };
+    }
+
+    return { profiles: savedProfiles };
+  }
+
   if (url.includes('/api/transactions/reset')) {
     saveLocalData('payflow_transactions', defaultTransactions);
     saveLocalData('payflow_audit_logs', defaultAuditLogs);
@@ -414,4 +461,35 @@ export function formatDate(isoString: string): string {
   } catch {
     return 'N/A';
   }
+}
+
+// Fetch all created profiles from the server
+export async function fetchProfiles(): Promise<any[]> {
+  const data = await safeFetchJson<{ profiles: any[] }>('/api/profiles');
+  return data.profiles || [];
+}
+
+// Save or update a profile on the server
+export async function saveProfileOnServer(profile: any): Promise<any> {
+  return await safeFetchJson<any>('/api/profiles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profile)
+  });
+}
+
+// Sync bulk profiles with server
+export async function syncProfilesWithServer(profiles: any[]): Promise<any> {
+  return await safeFetchJson<any>('/api/profiles/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profiles)
+  });
+}
+
+// Revoke and delete a profile by email
+export async function deleteProfileOnServer(email: string): Promise<any> {
+  return await safeFetchJson<any>(`/api/profiles/${encodeURIComponent(email)}`, {
+    method: 'DELETE'
+  });
 }

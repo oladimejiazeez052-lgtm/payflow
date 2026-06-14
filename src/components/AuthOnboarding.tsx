@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { fetchProfiles, saveProfileOnServer } from '../utils';
 
 export interface UserWorkspace {
   role: 'Lead Architect' | 'Issued Sandbox Account' | '';
@@ -25,7 +26,7 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleLoginDemo = (e: React.FormEvent) => {
+  const handleLoginDemo = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -42,7 +43,7 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
     }
 
     // 1. Check if login is Lead Architect profile
-    if (targetEmail === 'oladimejiazeez052@gmail.com') {
+    if (targetEmail === 'oladimejiazeez052@gmail.com' || targetEmail === 'abcdefg@gmail.com') {
       if (targetPassword === 'Architect2026!') {
         onComplete({
           role: 'Lead Architect',
@@ -51,7 +52,7 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
           selectedChannels: ['Zelle', 'Venmo', 'Cash App', 'Bank Transfer', 'Apple Pay'],
           firstName: 'Oladimeji',
           lastName: 'Azeez',
-          email: 'oladimejiazeez052@gmail.com',
+          email: targetEmail,
           loginTime: Date.now(),
           initialBalance: 10000000.00,
           currentBalance: 10000000.00,
@@ -64,14 +65,23 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
       }
     }
 
-    // 2. Check general created profiles
-    const savedProfilesStr = localStorage.getItem('payflow_profiles');
+    // 2. Check general created profiles (fetching from sever to allow mobile access)
     let profiles: any[] = [];
-    if (savedProfilesStr) {
-      try {
-        profiles = JSON.parse(savedProfilesStr);
-      } catch (err) {
-        console.error("Failed to parse payflow_profiles", err);
+    try {
+      profiles = await fetchProfiles();
+    } catch (err) {
+      console.error("Failed to fetch profiles from server, using local fallback", err);
+    }
+
+    // LocalStorage fallback if server is empty or failed
+    if (!profiles || profiles.length === 0) {
+      const savedProfilesStr = localStorage.getItem('payflow_profiles');
+      if (savedProfilesStr) {
+        try {
+          profiles = JSON.parse(savedProfilesStr);
+        } catch (err) {
+          console.error("Failed to parse payflow_profiles", err);
+        }
       }
     }
 
@@ -92,6 +102,11 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
           match.loginTime = now;
           profiles[matchedProfileIdx] = match;
           localStorage.setItem('payflow_profiles', JSON.stringify(profiles));
+          try {
+            await saveProfileOnServer(match);
+          } catch (err) {
+            console.error("Failed to persist updated login profile to server", err);
+          }
         }
 
         onComplete({
@@ -166,7 +181,7 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
                     id="login-email"
                     type="email"
                     required
-                    placeholder="oladimejiazeez052@gmail.com"
+                    placeholder="abcdefg@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium text-slate-800"
@@ -215,7 +230,7 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
       </main>
 
       <footer className="bg-white border-t border-slate-100 py-3.5 px-6 text-center text-[10px] text-slate-400 z-40 font-medium">
-        © 2026 PayFlow Simulation Frameworks. All rights reserved. • Licensed and secured by oladimejiazeez052@gmail.com
+        © 2026 PayFlow Simulation Frameworks. All rights reserved. • Licensed and secured by abcdefg@gmail.com
       </footer>
 
     </div>

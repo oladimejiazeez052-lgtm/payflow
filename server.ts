@@ -36,6 +36,7 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const TRANSACTIONS_FILE = path.join(DATA_DIR, 'transactions.json');
 const AUDIT_LOGS_FILE = path.join(DATA_DIR, 'audit_logs.json');
 const RECEIPTS_FILE = path.join(DATA_DIR, 'receipts.json');
+const PROFILES_FILE = path.join(DATA_DIR, 'profiles.json');
 
 // Ensure data folder exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -181,6 +182,7 @@ const defaultReceipts: Receipt[] = [
 let transactions: SimulatedTransaction[] = loadData(TRANSACTIONS_FILE, defaultTransactions);
 let auditLogs: AuditLog[] = loadData(AUDIT_LOGS_FILE, defaultAuditLogs);
 let receipts: Receipt[] = loadData(RECEIPTS_FILE, defaultReceipts);
+let profiles: any[] = loadData(PROFILES_FILE, []);
 
 // Helper to write to audit log
 function writeAuditLog(actionType: string, details: string, email = "oladimejiazeez052@gmail.com", ip = "127.0.0.1") {
@@ -340,6 +342,59 @@ app.post('/api/receipts', (req, res) => {
   );
 
   res.status(201).json(newReceipt);
+});
+
+// Profile Management routes to allow cross-device login (mobile vs desktop)
+app.get('/api/profiles', (req, res) => {
+  res.json({ profiles });
+});
+
+app.post('/api/profiles', (req, res) => {
+  const newProfile = req.body;
+  if (!newProfile || !newProfile.email) {
+    return res.status(400).json({ error: 'Missing profile parameters.' });
+  }
+  const email = newProfile.email.trim().toLowerCase();
+  const idx = profiles.findIndex(p => p.email.trim().toLowerCase() === email);
+  if (idx !== -1) {
+    profiles[idx] = { ...profiles[idx], ...newProfile, email };
+  } else {
+    profiles.unshift({ ...newProfile, email });
+  }
+  saveData(PROFILES_FILE, profiles);
+  writeAuditLog(
+    "Update Profile Settings",
+    `Processed custom workspace configuration for sandbox user ${email}.`
+  );
+  res.status(200).json({ success: true, profiles });
+});
+
+app.post('/api/profiles/sync', (req, res) => {
+  const clientProfiles = req.body;
+  if (Array.isArray(clientProfiles)) {
+    clientProfiles.forEach(cp => {
+      if (!cp || !cp.email) return;
+      const email = cp.email.trim().toLowerCase();
+      const idx = profiles.findIndex(p => p.email.trim().toLowerCase() === email);
+      if (idx !== -1) {
+        // Simple merge
+        profiles[idx] = { ...profiles[idx], ...cp, email };
+      } else {
+        profiles.push({ ...cp, email });
+      }
+    });
+    saveData(PROFILES_FILE, profiles);
+    writeAuditLog("Sync Profiles", `Synchronized and updated ${clientProfiles.length} sandbox accounts across clients.`);
+  }
+  res.json({ success: true, profiles });
+});
+
+app.delete('/api/profiles/:email', (req, res) => {
+  const email = req.params.email.trim().toLowerCase();
+  profiles = profiles.filter(p => p.email.trim().toLowerCase() !== email);
+  saveData(PROFILES_FILE, profiles);
+  writeAuditLog("Revoke Profile", `Revoked access and deleted credentials for sandbox profile ${email}.`);
+  res.json({ success: true, profiles });
 });
 
 // Gemini AI Scenario Generation Engine

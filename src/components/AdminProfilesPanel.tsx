@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatCurrency } from '../utils';
+import { formatCurrency, fetchProfiles, saveProfileOnServer, deleteProfileOnServer, syncProfilesWithServer } from '../utils';
 
 interface ProfileItem {
   email: string;
@@ -29,25 +29,42 @@ export default function AdminProfilesPanel() {
   const [customBalanceStr, setCustomBalanceStr] = useState('15000');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Load profiles from LocalStorage on mount
+  // Load profiles from server (and sync with LocalStorage on first run)
   useEffect(() => {
-    const saved = localStorage.getItem('payflow_profiles');
-    if (saved) {
+    const loadAndSyncProfiles = async () => {
+      let serverProfiles: ProfileItem[] = [];
       try {
-        setProfiles(JSON.parse(saved));
+        serverProfiles = await fetchProfiles();
       } catch (e) {
-        console.error("Failed to parse payflow_profiles", e);
+        console.error("Failed to fetch profiles from server", e);
       }
-    }
+
+      // Check if we have anything in local storage to migration-sync
+      const saved = localStorage.getItem('payflow_profiles');
+      if (saved) {
+        try {
+          const localProfiles: ProfileItem[] = JSON.parse(saved);
+          if (localProfiles.length > 0) {
+            // Sync with server
+            const res = await syncProfilesWithServer(localProfiles);
+            if (res && res.profiles) {
+              serverProfiles = res.profiles;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to parse local Profiles for migration sync:", e);
+        }
+      }
+
+      setProfiles(serverProfiles);
+      // Synchronize back to local storage as fallback cache
+      localStorage.setItem('payflow_profiles', JSON.stringify(serverProfiles));
+    };
+
+    loadAndSyncProfiles();
   }, []);
 
-  // Save profiles
-  const saveProfiles = (updated: ProfileItem[]) => {
-    setProfiles(updated);
-    localStorage.setItem('payflow_profiles', JSON.stringify(updated));
-  };
-
-  const handleCreateProfile = (e: React.FormEvent) => {
+  const handleCreateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
 
@@ -83,8 +100,22 @@ export default function AdminProfilesPanel() {
       createdAt: Date.now()
     };
 
-    const updated = [newProfile, ...profiles];
-    saveProfiles(updated);
+    try {
+      const res = await saveProfileOnServer(newProfile);
+      if (res && res.profiles) {
+        setProfiles(res.profiles);
+        localStorage.setItem('payflow_profiles', JSON.stringify(res.profiles));
+      } else {
+        const updated = [newProfile, ...profiles];
+        setProfiles(updated);
+        localStorage.setItem('payflow_profiles', JSON.stringify(updated));
+      }
+    } catch (err) {
+      console.error("Failed to save profile on server, falling back to local storage", err);
+      const updated = [newProfile, ...profiles];
+      setProfiles(updated);
+      localStorage.setItem('payflow_profiles', JSON.stringify(updated));
+    }
 
     // Reset fields
     setFirstName('');
@@ -95,10 +126,24 @@ export default function AdminProfilesPanel() {
     setFeedback({ type: 'success', message: `Profile for ${newProfile.firstName} ${newProfile.lastName} was created successfully!` });
   };
 
-  const handleDeleteProfile = (targetEmail: string) => {
+  const handleDeleteProfile = async (targetEmail: string) => {
     if (confirm(`Are you sure you want to delete and revoke the active sandbox access for ${targetEmail}?`)) {
-      const updated = profiles.filter(p => p.email.toLowerCase() !== targetEmail.toLowerCase());
-      saveProfiles(updated);
+      try {
+        const res = await deleteProfileOnServer(targetEmail);
+        if (res && res.profiles) {
+          setProfiles(res.profiles);
+          localStorage.setItem('payflow_profiles', JSON.stringify(res.profiles));
+        } else {
+          const updated = profiles.filter(p => p.email.toLowerCase() !== targetEmail.toLowerCase());
+          setProfiles(updated);
+          localStorage.setItem('payflow_profiles', JSON.stringify(updated));
+        }
+      } catch (err) {
+        console.error("Failed to delete profile from server, using local fallback", err);
+        const updated = profiles.filter(p => p.email.toLowerCase() !== targetEmail.toLowerCase());
+        setProfiles(updated);
+        localStorage.setItem('payflow_profiles', JSON.stringify(updated));
+      }
     }
   };
 

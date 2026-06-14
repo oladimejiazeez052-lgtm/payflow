@@ -4,9 +4,10 @@ import { formatDate } from '../utils';
 
 interface AuditLedgerProps {
   auditLogs: AuditLog[];
+  userEmail?: string;
 }
 
-export default function AuditLedger({ auditLogs }: AuditLedgerProps) {
+export default function AuditLedger({ auditLogs, userEmail = 'abcdefg@gmail.com' }: AuditLedgerProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredLogs = useMemo(() => {
@@ -55,7 +56,7 @@ export default function AuditLedger({ auditLogs }: AuditLedgerProps) {
         {/* Diagnostic data */}
         <div className="text-right text-[11px] text-slate-400 flex items-center gap-2">
           <span>Active Coordinator Email:</span>
-          <strong className="text-slate-700 dark:text-slate-300">oladimejiazeez052@gmail.com</strong>
+          <strong className="text-slate-700 dark:text-slate-300">{userEmail}</strong>
         </div>
 
       </div>
