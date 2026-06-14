@@ -6,7 +6,7 @@ interface ProfileItem {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'Fintech Trainer' | 'UX Designer' | 'Developer' | 'Fintech Learner';
+  role: 'Issued Sandbox Account';
   businessName: string;
   currency: string;
   initialBalance: number;
@@ -21,7 +21,7 @@ export default function AdminProfilesPanel() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const role = 'Developer';
+  const role = 'Issued Sandbox Account';
   const [businessName, setBusinessName] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [balanceInputType, setBalanceInputType] = useState<'preset' | 'custom'>('preset');
