@@ -1,4 +1,4 @@
-export type PaymentChannel = 'Zelle' | 'Venmo' | 'Cash App' | 'Bank Transfer';
+export type PaymentChannel = 'Zelle' | 'Venmo' | 'Cash App' | 'Bank Transfer' | 'Apple Pay';
 export type TransactionStatus = 'Completed' | 'Pending' | 'Failed';
 
 export interface SimulatedTransaction {

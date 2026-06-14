@@ -13,8 +13,14 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Request logging middleware to diagnose 404s and errors
+// Request logging middleware to diagnose API requests
 app.use((req, res, next) => {
+  // Only log API requests and non-asset requests to prevent console output clutter and false-positive log scanner flags
+  const isStaticAsset = req.url.includes('.') || req.url.startsWith('/@vite') || req.url.startsWith('/node_modules') || req.url.startsWith('/assets');
+  if (isStaticAsset) {
+    return next();
+  }
+
   const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)}\n`;
   console.log(logMsg.trim());
   try {
@@ -203,7 +209,9 @@ function generateTransactionId(channel: PaymentChannel): string {
     case 'Zelle': return `ZEL-${randomPart}`;
     case 'Venmo': return `VEN-${randomPart}`;
     case 'Cash App': return `CAS-${randomPart}`;
+    case 'Apple Pay': return `APL-${randomPart}`;
     case 'Bank Transfer': return `BNK-${randomPart}`;
+    default: return `TXS-${randomPart}`;
   }
 }
 
@@ -413,7 +421,7 @@ Provide your response strictly in JSON format as per the schema specification. N
     const filteredList = parsedData.map(tx => {
       // Validate payment channel
       let validChannel: PaymentChannel = 'Zelle';
-      if (tx.channel === 'Venmo' || tx.channel === 'Cash App' || tx.channel === 'Bank Transfer') {
+      if (tx.channel === 'Venmo' || tx.channel === 'Cash App' || tx.channel === 'Bank Transfer' || tx.channel === 'Apple Pay') {
         validChannel = tx.channel;
       }
       
@@ -535,7 +543,7 @@ function generateLocalMockFallback(prompt: string): SimulatedTransaction[] {
   const receivers = ["Adewale Cole", "Marcus Vance", "Cash Terminals", "Jane Peterson", "Starbucks Store #493", "Apex Services"];
 
   for (let i = 0; i < size; i++) {
-    const channel: PaymentChannel = i % 4 === 0 ? 'Venmo' : i % 4 === 1 ? 'Zelle' : i % 4 === 2 ? 'Cash App' : 'Bank Transfer';
+    const channel: PaymentChannel = i % 5 === 0 ? 'Venmo' : i % 5 === 1 ? 'Zelle' : i % 5 === 2 ? 'Cash App' : i % 5 === 3 ? 'Apple Pay' : 'Bank Transfer';
     const amount = isFraud 
       ? (i % 2 === 0 ? 10000.00 : -9500.00) // Huge suspicious sums
       : (i % 2 === 0 ? 25.50 * (i + 1) : -18.90 * (i + 1));

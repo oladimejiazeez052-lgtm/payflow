@@ -16,3 +16,17 @@
   line-height: 1;
 }
 
+/* Optimize text legibility and subpixel rendering for crystal clear screenshots across all displays */
+html, body, #root {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+#print-receipt-container {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+

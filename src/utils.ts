@@ -148,6 +148,7 @@ function generateLocalTxId(channel: PaymentChannel): string {
     case 'Venmo': return `VEN-${randomPart}`;
     case 'Cash App': return `CAS-${randomPart}`;
     case 'Bank Transfer': return `BNK-${randomPart}`;
+    case 'Apple Pay': return `APL-${randomPart}`;
   }
 }
 
@@ -175,7 +176,7 @@ function generateClientScenarioTx(prompt: string): SimulatedTransaction[] {
   const receivers = ["Adewale Cole", "Marcus Vance", "Cash Terminals", "Jane Peterson", "Starbucks Store #493", "Apex Services"];
 
   for (let i = 0; i < size; i++) {
-    const channel: PaymentChannel = i % 4 === 0 ? 'Venmo' : i % 4 === 1 ? 'Zelle' : i % 4 === 2 ? 'Cash App' : 'Bank Transfer';
+    const channel: PaymentChannel = i % 5 === 0 ? 'Venmo' : i % 5 === 1 ? 'Zelle' : i % 5 === 2 ? 'Cash App' : i % 5 === 3 ? 'Apple Pay' : 'Bank Transfer';
     const amount = isFraud 
       ? (i % 2 === 0 ? 10000.00 : -9500.00) // Huge suspicious sums
       : (i % 2 === 0 ? 25.50 * (i + 1) : -18.90 * (i + 1));

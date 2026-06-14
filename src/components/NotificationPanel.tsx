@@ -105,7 +105,7 @@ export default function NotificationPanel({
   const [activeSubTab, setActiveSubTab] = useState<'alerts' | 'emails'>('alerts');
   
   // States for Email Simulation workspace
-  const [emailBrand, setEmailBrand] = useState<'Cash App' | 'Zelle' | 'Venmo'>('Cash App');
+  const [emailBrand, setEmailBrand] = useState<'Cash App' | 'Zelle' | 'Venmo' | 'Apple Pay'>('Cash App');
   const [recipientName, setRecipientName] = useState('Wesley Jeffrey');
   const [holdAmount, setHoldAmount] = useState('750.00');
   const [expansionAmount, setExpansionAmount] = useState('150.00');
@@ -547,8 +547,8 @@ export default function NotificationPanel({
                 <label className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block">
                   Alert Brand Styling
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['Cash App', 'Zelle', 'Venmo'] as const).map((brand) => (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {(['Cash App', 'Zelle', 'Venmo', 'Apple Pay'] as const).map((brand) => (
                     <button
                       key={brand}
                       type="button"
@@ -561,6 +561,9 @@ export default function NotificationPanel({
                         } else if (brand === 'Zelle') {
                           setHoldAmount('1,500.00');
                           setExpansionAmount('250.00');
+                        } else if (brand === 'Apple Pay') {
+                          setHoldAmount('950.00');
+                          setExpansionAmount('180.00');
                         } else {
                           setHoldAmount('620.00');
                           setExpansionAmount('120.00');
@@ -714,6 +717,31 @@ export default function NotificationPanel({
                   </p>
                 </div>
 
+                {/* Apple Pay Item Link */}
+                <div 
+                  onClick={() => {
+                    setEmailBrand('Apple Pay');
+                    setHoldAmount('950.00');
+                    setExpansionAmount('180.00');
+                  }}
+                  className={`p-3.5 cursor-pointer text-left transition duration-150 border-l-4 ${
+                    emailBrand === 'Apple Pay' 
+                      ? 'bg-zinc-50/50 dark:bg-zinc-950/5 text-slate-900 dark:text-white border-slate-950 dark:border-white' 
+                      : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-850/50'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <span className="font-black text-xs text-slate-900 dark:text-white">Apple Pay Dispatch Desk</span>
+                    <span className="text-[9px] text-zinc-500 font-bold">Just now</span>
+                  </div>
+                  <h6 className="font-bold text-xs text-slate-700 dark:text-slate-300 truncate mt-0.5">
+                    URGENT HOLD: Action Required for Transaction ref #APL-LIMIT77
+                  </h6>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-450 truncate font-semibold mt-1">
+                    Dear Customer, we encountered a little problem trying to credit your Apple Pay account with that amount...
+                  </p>
+                </div>
+
               </div>
             </div>
 
@@ -739,26 +767,25 @@ export default function NotificationPanel({
 
             {/* High-Fidelity Email Mockup Envelope */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden flex flex-col justify-between relative">
-              
-              {/* Decorative Brand Header Border Line */}
+                         {/* Decorative Brand Header Border Line */}
               <div className={`h-1.5 w-full ${
-                emailBrand === 'Cash App' ? 'bg-emerald-500' : emailBrand === 'Zelle' ? 'bg-purple-600' : 'bg-sky-500'
+                emailBrand === 'Cash App' ? 'bg-emerald-500' : emailBrand === 'Zelle' ? 'bg-purple-600' : emailBrand === 'Apple Pay' ? 'bg-slate-900' : 'bg-sky-500'
               }`}></div>
 
               {/* From/To Metadata Grid */}
               <div className="bg-slate-50 dark:bg-slate-900/40 p-4 border-b border-light-slate-100 dark:border-slate-800/70 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-[34px] h-[34px] rounded-full flex items-center justify-center font-extrabold text-white text-xs ${
-                    emailBrand === 'Cash App' ? 'bg-emerald-500' : emailBrand === 'Zelle' ? 'bg-purple-600' : 'bg-sky-400'
+                    emailBrand === 'Cash App' ? 'bg-emerald-500' : emailBrand === 'Zelle' ? 'bg-purple-600' : emailBrand === 'Apple Pay' ? 'bg-black border border-zinc-800' : 'bg-sky-450'
                   }`}>
-                    {emailBrand[0]}
+                    {emailBrand === 'Apple Pay' ? '' : emailBrand[0]}
                   </div>
                   <div className="text-left">
                     <div className="font-extrabold text-[12px] text-slate-900 dark:text-white leading-tight">
-                      {emailBrand === 'Cash App' ? 'Cash App Support Services' : emailBrand === 'Zelle' ? 'Zelle Transfer Security' : 'Venmo Compliance Desk'}
+                      {emailBrand === 'Cash App' ? 'Cash App Support Services' : emailBrand === 'Zelle' ? 'Zelle Transfer Security' : emailBrand === 'Apple Pay' ? 'Apple Pay Dispatch Service' : 'Venmo Compliance Desk'}
                     </div>
                     <div className="text-slate-400 dark:text-slate-400 text-[9px] font-mono leading-none mt-0.5">
-                      {emailBrand === 'Cash App' ? 'support@cash.app' : emailBrand === 'Zelle' ? 'alerts@zellepay.com' : 'clearance@venmo.com'}
+                      {emailBrand === 'Cash App' ? 'support@cash.app' : emailBrand === 'Zelle' ? 'alerts@zellepay.com' : emailBrand === 'Apple Pay' ? 'dispatch@apple-pay.com' : 'clearance@venmo.com'}
                     </div>
                   </div>
                 </div>
@@ -786,7 +813,7 @@ export default function NotificationPanel({
 
                 {/* Specific support text for transaction limit issues exactly styled */}
                 <p className="bg-rose-50/40 dark:bg-rose-950/15 border-l-4 border-rose-500 px-4 py-3 text-rose-900 dark:text-rose-400 rounded-r-xl leading-relaxed font-bold shadow-2xs">
-                  To complete this transaction and receive the funds, please contact {emailBrand === 'Cash App' ? 'Cash App Support' : emailBrand === 'Zelle' ? 'Zelle Support' : 'Venmo Support'} to increase your transaction limit. we encounter a little problem while trying to credit your {emailBrand === 'Cash App' ? 'Cash App' : emailBrand === 'Zelle' ? 'Zelle' : 'Venmo'} account,with that amount because the status of your {emailBrand === 'Cash App' ? 'Cash App' : emailBrand === 'Zelle' ? 'Zelle' : 'Venmo'} account is not a business user which makes your account have a limit and this amount seems to be above your limit.You have to take the urgent step to expand your account limit.
+                  To complete this transaction and receive the funds, please contact {emailBrand === 'Cash App' ? 'Cash App Support' : emailBrand === 'Zelle' ? 'Zelle Support' : emailBrand === 'Apple Pay' ? 'Apple Wallet Support' : 'Venmo Support'} to increase your transaction limit. we encounter a little problem while trying to credit your {emailBrand === 'Cash App' ? 'Cash App' : emailBrand === 'Zelle' ? 'Zelle' : emailBrand === 'Apple Pay' ? 'Apple Pay' : 'Venmo'} account,with that amount because the status of your {emailBrand === 'Cash App' ? 'Cash App' : emailBrand === 'Zelle' ? 'Zelle' : emailBrand === 'Apple Pay' ? 'Apple Pay' : 'Venmo'} account is not a business user which makes your account have a limit and this amount seems to be above your limit.You have to take the urgent step to expand your account limit.
                 </p>
 
                 {/* Exact requested text incorporating price precisely as requested */}

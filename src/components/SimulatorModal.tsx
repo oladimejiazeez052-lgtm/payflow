@@ -23,6 +23,7 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorText, setErrorText] = useState('');
+  const [receiverHandle, setReceiverHandle] = useState('');
 
   // Dynamic helper links to verify handles in respective platforms
   const getCashAppUrl = () => {
@@ -51,6 +52,17 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
     }
   };
 
+  const formatUSAPhone = (val: string): string => {
+    const cleaned = val.replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      return `+1 (${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    }
+    if (cleaned.length === 11 && cleaned.startsWith('1')) {
+      return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    }
+    return val.trim().startsWith('+1') ? val.trim() : `+1 ${val.trim()}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorText('');
@@ -61,8 +73,26 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
       return;
     }
 
-    if (!sender.trim() || !receiver.trim()) {
-      setErrorText('Payer (Sender) and Receiver name cells are mandatory.');
+    // Validate Apple Pay specifically for USA numbers
+    let finalReceiver = receiver.trim();
+    if (channel === 'Apple Pay') {
+      const cleanedPhone = receiverHandle.replace(/\D/g, '');
+      const isPhoneValid = cleanedPhone.length === 10 || (cleanedPhone.length === 11 && cleanedPhone.startsWith('1'));
+      if (!receiverHandle.trim()) {
+        setErrorText('USA Recipient Phone Number is mandatory for Apple Pay.');
+        return;
+      }
+      if (!isPhoneValid) {
+        setErrorText('Please enter a valid 10-digit US phone number (e.g., +1 (555) 019-2834) for Apple Pay.');
+        return;
+      }
+      finalReceiver = formatUSAPhone(receiverHandle);
+    } else if (receiverHandle.trim()) {
+      finalReceiver = receiverHandle.trim();
+    }
+
+    if (!sender.trim() || !finalReceiver.trim()) {
+      setErrorText('Payer (Sender) and Receiver name/handle cells are mandatory.');
       return;
     }
 
@@ -75,7 +105,7 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
         amount: actualAmount,
         channel,
         sender: sender.trim(),
-        receiver: receiver.trim(),
+        receiver: finalReceiver.trim(),
         status,
         note: note.trim()
       });
@@ -165,6 +195,7 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
                 <option value="Cash App">Cash App ($cashtag)</option>
                 <option value="Zelle">Zelle Clearance</option>
                 <option value="Venmo">Venmo (@handle)</option>
+                <option value="Apple Pay">Apple Pay (USA Phone Number)</option>
                 <option value="Bank Transfer">Bank Transfer (Invoice)</option>
               </select>
             </div>
@@ -189,14 +220,23 @@ export default function SimulatorModal({ onClose, onSubmit }: SimulatorModalProp
 
             {/* Simulated Direction or Automatic Output for amount sign helper */}
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Recipient Username or Handle</label>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                {channel === 'Apple Pay' ? 'USA Recipient Phone Number' : 'Recipient Username or Handle'}
+              </label>
               <input
                 type="text"
-                placeholder={channel === 'Cash App' ? 'e.g. $WesKing410' : channel === 'Venmo' ? 'e.g. @username' : 'e.g. receiver@email.com'}
+                value={receiverHandle}
+                onChange={(e) => setReceiverHandle(e.target.value)}
+                placeholder={
+                  channel === 'Cash App' 
+                    ? 'e.g. $WesKing410' 
+                    : channel === 'Venmo' 
+                    ? 'e.g. @username' 
+                    : channel === 'Apple Pay'
+                    ? 'e.g. +1 (555) 019-2834'
+                    : 'e.g. receiver@email.com'
+                }
                 className="px-3.5 py-2 w-full border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 text-xs rounded-xl transition font-mono font-bold text-blue-700"
-                onChange={(e) => {
-                  // Prepopulate or sync handle directly if desired, but we can rely on standard receiver
-                }}
               />
             </div>
 

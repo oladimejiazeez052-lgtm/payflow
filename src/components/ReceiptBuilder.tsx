@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SimulatedTransaction, Receipt, ReceiptLineItem, TransactionStatus } from '../types';
 import { createBrandedReceipt, formatCurrency } from '../utils';
+import { toPng } from 'html-to-image';
 
 interface ReceiptBuilderProps {
   transactions: SimulatedTransaction[];
@@ -33,7 +34,7 @@ export default function ReceiptBuilder({
   const [errorMsg, setErrorMsg] = useState('');
 
   // Sandbox Receipts Templates Custom State matching Image 1 & Image 2 (Cash App & Zelle)
-  const [templateType, setTemplateType] = useState<'merchant' | 'cashapp' | 'cashapp_email' | 'zelle_sent' | 'zelle_email' | 'venmo' | 'venmo_email'>('merchant');
+  const [templateType, setTemplateType] = useState<'merchant' | 'cashapp' | 'cashapp_email' | 'zelle_sent' | 'zelle_email' | 'venmo' | 'venmo_email' | 'apple_pay' | 'apple_pay_email'>('merchant');
   const [receiverName, setReceiverName] = useState('Wesley Jeffrey');
   const [receiverHandle, setReceiverHandle] = useState('$WesKing410');
   const [memoNote, setMemoNote] = useState('Giveaway Cash');
@@ -72,6 +73,9 @@ export default function ReceiptBuilder({
           ? selectedTxFromDashboard.receiver 
           : `@${selectedTxFromDashboard.receiver.replace(/\s+/g, '')}`;
         setReceiverHandle(formattedHandle);
+      } else if (selectedTxFromDashboard.channel === 'Apple Pay') {
+        setTemplateType('apple_pay');
+        setReceiverHandle(selectedTxFromDashboard.receiver);
       } else {
         setTemplateType('merchant');
         setReceiverHandle('');
@@ -123,6 +127,9 @@ export default function ReceiptBuilder({
           ? found.receiver 
           : `@${found.receiver.replace(/\s+/g, '')}`;
         setReceiverHandle(formattedHandle);
+      } else if (found.channel === 'Apple Pay') {
+        setTemplateType('apple_pay');
+        setReceiverHandle(found.receiver);
       } else {
         setTemplateType('merchant');
         setReceiverHandle('');
@@ -208,6 +215,45 @@ export default function ReceiptBuilder({
 
   const handlePrintReceipt = () => {
     window.print();
+  };
+
+  const handleDownloadHighResPNG = async () => {
+    const node = document.getElementById('print-receipt-container');
+    if (!node) {
+      setErrorMsg('No receipt display canvas loaded to capture.');
+      return;
+    }
+    try {
+      setIsCompiling(true);
+      setErrorMsg('');
+      setSuccessMsg('');
+      
+      // Delay slightly to stabilize layout
+      await new Promise(resolve => setTimeout(resolve, 250));
+
+      // Capture at highly optimized scale to prevent blurriness entirely
+      const dataUrl = await toPng(node, {
+        pixelRatio: 4, // 400% scale for extreme non-blurry clarity
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+          margin: '0',
+          boxShadow: 'none',
+        },
+        backgroundColor: '#ffffff'
+      });
+
+      const link = document.createElement('a');
+      link.download = `Receipt_${merchantName.trim().replace(/\s+/g, '_') || 'Simulated'}_HQ.png`;
+      link.href = dataUrl;
+      link.click();
+      setSuccessMsg('✅ Ultra-HQ Crisp PNG Image downloaded successfully!');
+    } catch (err: any) {
+      console.error("Screenshot capture error: ", err);
+      setErrorMsg(`Screenshot generation failure: ${err.message || 'Rendering fault.'}`);
+    } finally {
+      setIsCompiling(false);
+    }
   };
 
   return (
@@ -300,6 +346,8 @@ export default function ReceiptBuilder({
               <option value="zelle_email">Zelle Receipt 2 (Email/Mail Notification)</option>
               <option value="venmo">Venmo Receipt 1 (Standard App Slip)</option>
               <option value="venmo_email">Venmo Receipt 2 (Email/Mail Notification)</option>
+              <option value="apple_pay">Apple Pay Receipt 1 (iOS Apple Wallet)</option>
+              <option value="apple_pay_email">Apple Pay Receipt 2 (Email Alert & Dispatch)</option>
             </select>
           </div>
 
@@ -340,7 +388,15 @@ export default function ReceiptBuilder({
                     type="text"
                     value={receiverHandle}
                     onChange={(e) => setReceiverHandle(e.target.value)}
-                    placeholder={templateType === 'cashapp' || templateType === 'cashapp_email' ? 'e.g. $WesKing410' : templateType === 'venmo' || templateType === 'venmo_email' ? 'e.g. @username' : 'e.g. receiver@email'}
+                    placeholder={
+                      templateType === 'cashapp' || templateType === 'cashapp_email' 
+                        ? 'e.g. $WesKing410' 
+                        : templateType === 'venmo' || templateType === 'venmo_email' 
+                        ? 'e.g. @username' 
+                        : templateType === 'apple_pay' || templateType === 'apple_pay_email'
+                        ? 'e.g. +1 (555) 019-2834'
+                        : 'e.g. receiver@email'
+                    }
                     className="px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none rounded-lg text-xs w-full font-semibold"
                   />
                 </div>
@@ -469,7 +525,7 @@ export default function ReceiptBuilder({
           </div>
 
           {/* Form Actions */}
-          <div className="flex gap-2 pt-4 border-t border-slate-100">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 pt-4 border-t border-slate-100">
             <button
               type="submit"
               disabled={isCompiling}
@@ -479,10 +535,19 @@ export default function ReceiptBuilder({
             </button>
             <button
               type="button"
-              onClick={handlePrintReceipt}
-              className="px-5 py-3 border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition"
+              onClick={handleDownloadHighResPNG}
+              className="px-4 py-3 bg-slate-900 border border-slate-950 text-white hover:bg-slate-800 font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-xs"
+              title="Download crystal-clear, non-blurry PNG screenshot"
             >
-              Print / Export PDF
+              <span className="material-symbols-outlined text-sm font-black">download</span>
+              <span>Download HQ PNG</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePrintReceipt}
+              className="px-4 py-3 border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl transition"
+            >
+              Print / PDF
             </button>
           </div>
 
@@ -965,6 +1030,154 @@ export default function ReceiptBuilder({
                 ) : (
                   <div className="text-rose-700 bg-rose-50 border border-rose-100 py-1.5 rounded-lg">
                     ✗ Settlement Failure - Merchant Code Decline
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+
+          {templateType === 'apple_pay' && (
+            <div className="flex flex-col space-y-4 font-sans text-white bg-black -mx-6 -my-6 p-6 min-h-[460px] animate-scale-up border border-zinc-900 rounded-3xl" id="apple-pay-preview-card">
+              
+              {/* Done / Apple Wallet style header block */}
+              <div className="flex justify-between items-center text-zinc-400 text-xs font-semibold pt-2">
+                <span className="text-white text-[13px] tracking-tight font-extrabold flex items-center gap-1.5 font-sans">
+                  <span className="cursor-pointer text-white font-black"></span> Pay
+                </span>
+                <span className="text-emerald-500 font-extrabold tracking-tight uppercase text-[9px] bg-emerald-950/45 px-2 py-0.5 rounded border border-emerald-500/20">
+                  {receiptStatus === 'Completed' ? '✓ Paid' : receiptStatus === 'Pending' ? '◴ Pending' : '✗ Failed'}
+                </span>
+              </div>
+
+              {/* Huge central check symbol / circle representation */}
+              <div className="flex flex-col items-center justify-center pt-8 pb-4 space-y-2.5">
+                <div className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-lg relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-zinc-950 via-zinc-900 to-zinc-800 opacity-80" />
+                  <span className="material-symbols-outlined text-4xl text-white font-black z-10">
+                    {receiptStatus === 'Completed' ? 'check' : receiptStatus === 'Pending' ? 'schedule' : 'close'}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center flex-wrap whitespace-nowrap">
+                  <span className="text-zinc-400 font-extrabold text-[10px] tracking-widest uppercase">
+                    Apple Pay Transfer
+                  </span>
+                  <span className="text-white text-3xl font-black font-sans leading-none mt-2 tracking-tight">
+                    {formatCurrency(totals.total)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Sender & Receiver list */}
+              <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 text-xs space-y-3">
+                <div className="flex justify-between border-b border-zinc-800 pb-2.5">
+                  <span className="text-zinc-500 font-semibold tracking-wide uppercase text-[8px]">Sender Payer</span>
+                  <span className="font-bold text-white tracking-tight">{merchantName || 'Sandbox Sender'}</span>
+                </div>
+                <div className="flex justify-between border-b border-zinc-800 pb-2.5">
+                  <span className="text-zinc-500 font-semibold tracking-wide uppercase text-[8px]">Recipient Mobile (USA)</span>
+                  <span className="font-bold text-white font-mono tracking-tight">{receiverHandle || '+1 (555) 019-2834'}</span>
+                </div>
+                <div className="flex justify-between border-b border-zinc-800 pb-2.5">
+                  <span className="text-zinc-500 font-semibold tracking-wide uppercase text-[8px]">Memo Detail</span>
+                  <span className="font-semibold text-zinc-300 italic max-w-[150px] truncate block text-right">
+                    {memoNote || 'No memo specified'}
+                  </span>
+                </div>
+                <div className="flex justify-between pb-0.5">
+                  <span className="text-zinc-500 font-semibold tracking-wide uppercase text-[8px]">Clearance reference</span>
+                  <span className="font-mono font-bold text-zinc-200 text-[10px]">{associatedTxId ? `APL-${associatedTxId.toUpperCase()}` : 'APL-REXTZ'}</span>
+                </div>
+              </div>
+
+              {/* Bottom security assurance block */}
+              <div className="pt-4 flex flex-col items-center justify-center space-y-1 mt-auto">
+                <p className="text-zinc-400 text-[9px] text-center max-w-[210px] uppercase font-bold tracking-wider leading-relaxed">
+                   Wallet Security Cleared 
+                </p>
+                <span className="text-zinc-500 font-mono text-[8.5px] tracking-wider">
+                  {transferDateStr}
+                </span>
+              </div>
+
+            </div>
+          )}
+
+          {templateType === 'apple_pay_email' && (
+            <div className="flex flex-col space-y-4 font-sans animate-scale-up" id="apple-pay-email-preview-card">
+              
+              {/* Institution Header simulation */}
+              <div className="bg-[#f5f5f7] p-3 -mx-6 -mt-6 flex justify-between items-center text-slate-900 border-b border-slate-200">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-black text-xs text-black"> Pay Dispatch</span>
+                </div>
+                <span className="text-[9px] font-extrabold tracking-wider uppercase bg-slate-900 text-white px-2 py-0.5 rounded">
+                  Secure Clearance
+                </span>
+              </div>
+
+              {/* Alert Message body */}
+              <div className="pt-4 space-y-3">
+                <h3 className="text-black font-black text-[15px] leading-tight tracking-tight">
+                  Your Apple Pay transfer of {formatCurrency(totals.total)} has cleared.
+                </h3>
+              </div>
+
+              {/* Transaction details block */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] space-y-2 text-slate-600 font-sans">
+                <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                  <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">Date:</span>
+                  <span className="font-bold text-slate-705">{transferDateStr.replace('Today at ', '') || '11/05/2026'}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                  <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">Sender Payer:</span>
+                  <span className="font-bold text-slate-705">{merchantName || 'Sandbox Payer'}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                  <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">To USA Number:</span>
+                  <span className="font-bold text-slate-705 font-mono">{receiverHandle || '+1 (555) 019-2834'}</span>
+                </div>
+                <div className="flex justify-between pb-0.5">
+                  <span className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">Apple Clearance:</span>
+                  <span className="font-mono font-bold text-slate-800">{associatedTxId ? `APL-${associatedTxId.toUpperCase()}` : 'APL-AXZOYT'}</span>
+                </div>
+              </div>
+
+              {/* Notice text */}
+              <div className="text-[10px] text-slate-500 leading-normal space-y-3 font-sans">
+                <p>
+                  You have received an Apple Pay transfer of <strong className="text-slate-950 font-bold">{formatCurrency(totals.total)} USD</strong> directed to your verified USA mobile number.
+                </p>
+                <div className="text-slate-700 font-semibold leading-relaxed p-3.5 bg-zinc-50 rounded-xl border border-zinc-200">
+                  <p className="text-rose-600 font-bold mb-1">⚠️ Limit Notice from Clearance Desk:</p>
+                  <p className="text-[9.5px]">
+                    To complete this transaction and receive the dispatch funds, please contact Apple Wallet Support to increase your transaction limit. we encounter a little problem while trying to credit your Apple Pay account,with that amount because the status of your Apple Pay account is not a business user which makes your account have a limit and this amount seems to be above your limit.You have to take the urgent step to expand your account limit.
+                  </p>
+                </div>
+              </div>
+
+              {/* Need assistance helpline trigger */}
+              <div className="border border-slate-200 pt-3.5 pb-3.5 px-3 bg-[#f5f5f7] rounded-xl text-slate-900 font-bold text-[10.5px] flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm font-bold text-zinc-650">contact_support</span>
+                  <span>USA Apple Clearance Helpdesk:</span>
+                </div>
+                <span className="text-slate-950 underline font-extrabold cursor-pointer font-mono text-[10px]">+1 (470) 847-6743</span>
+              </div>
+
+              {/* Settlements Confirmed badge */}
+              <div className="text-center text-[8px] font-bold tracking-wider uppercase rounded-lg">
+                {receiptStatus === 'Completed' ? (
+                  <div className="text-emerald-700 bg-emerald-50 border border-emerald-100 py-1.5 rounded-lg">
+                    ✓ Balance Cleared by Apple Pay Dispatch Service
+                  </div>
+                ) : receiptStatus === 'Pending' ? (
+                  <div className="text-amber-705 bg-amber-50 border border-amber-100 py-1.5 rounded-lg animate-pulse">
+                    ⚠️ Held Status - Pending Verification Upgrade
+                  </div>
+                ) : (
+                  <div className="text-rose-700 bg-rose-50 border border-rose-100 py-1.5 rounded-lg">
+                    ✗ Apple Pay Limit Validation Reject
                   </div>
                 )}
               </div>

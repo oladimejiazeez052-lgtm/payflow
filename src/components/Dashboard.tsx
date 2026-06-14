@@ -35,7 +35,7 @@ export default function Dashboard({
 
     transactions.forEach(tx => {
       if (tx.status === 'Completed') {
-        if (tx.channel === 'Bank Transfer') checking += tx.amount;
+        if (tx.channel === 'Bank Transfer' || tx.channel === 'Apple Pay') checking += tx.amount;
         else if (tx.channel === 'Zelle') zelle += tx.amount;
         else if (tx.channel === 'Cash App') cashApp += tx.amount;
         else if (tx.channel === 'Venmo') venmo += tx.amount;
@@ -243,7 +243,7 @@ export default function Dashboard({
 
                   {/* Dot Highlights */}
                   {chartDataPoints.map((p, i) => (
-                    <g key={i} className="group/dot cursor-pointer">
+                    <g key={`chart-dot-${p.id || i}`} className="group/dot cursor-pointer">
                       <circle cx={p.x} cy={p.y} r="3" fill="#ffffff" stroke="#2563eb" strokeWidth="1.5" />
                       <circle cx={p.x} cy={p.y} r="5" fill="#2563eb" opacity="0" className="transition group-hover/dot:opacity-20" />
                     </g>
@@ -351,7 +351,7 @@ export default function Dashboard({
             
             {/* Direct selector triggers */}
             <div className="flex p-0.5 bg-slate-100 rounded-lg overflow-x-auto text-[11px] font-semibold text-slate-500 max-w-full">
-              {(['All', 'Zelle', 'Venmo', 'Cash App', 'Bank Transfer'] as const).map(ch => (
+              {(['All', 'Zelle', 'Venmo', 'Cash App', 'Apple Pay', 'Bank Transfer'] as const).map(ch => (
                 <button
                   key={ch}
                   onClick={() => setSelectedChannel(ch)}
@@ -424,11 +424,11 @@ export default function Dashboard({
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((tx) => {
+                filteredTransactions.map((tx, idx) => {
                   const isFlagged = flaggedFraudIds.includes(tx.id);
                   return (
                     <tr 
-                      key={tx.id} 
+                      key={`tx-row-${tx.id}-${idx}`} 
                       onClick={() => setActiveTx(tx)}
                       className={`cursor-pointer transition border-b border-slate-100 ${
                         isFlagged 
@@ -455,6 +455,8 @@ export default function Dashboard({
                             ? 'bg-sky-50 text-sky-700'
                             : tx.channel === 'Cash App'
                             ? 'bg-emerald-50 text-emerald-700'
+                            : tx.channel === 'Apple Pay'
+                            ? 'bg-slate-900 border border-slate-950/20 text-white'
                             : 'bg-blue-50 text-blue-700'
                         }`}>
                           {tx.channel}
