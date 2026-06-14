@@ -481,6 +481,8 @@ export default function App() {
                     selectedTxFromDashboard={selectedTxFromDashboard}
                     onReceiptCompiled={handleReceiptCompiled}
                     receipts={receipts}
+                    userRole={workspace.role}
+                    currentBalance={workspace.currentBalance}
                   />
                 )}
 

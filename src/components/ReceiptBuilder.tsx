@@ -8,6 +8,8 @@ interface ReceiptBuilderProps {
   selectedTxFromDashboard: SimulatedTransaction | null;
   onReceiptCompiled: (newReceipt: Receipt) => void;
   receipts: Receipt[];
+  userRole?: string;
+  currentBalance?: number;
 }
 
 const LOGO_COLORS = ['blue', 'indigo', 'purple', 'emerald', 'amber', 'rose', 'slate'];
@@ -16,7 +18,9 @@ export default function ReceiptBuilder({
   transactions, 
   selectedTxFromDashboard,
   onReceiptCompiled,
-  receipts
+  receipts,
+  userRole,
+  currentBalance
 }: ReceiptBuilderProps) {
   const [associatedTxId, setAssociatedTxId] = useState('');
   const [merchantName, setMerchantName] = useState('Coffee & Bytes Café');
@@ -179,6 +183,10 @@ export default function ReceiptBuilder({
 
   const handleCompileReceiptSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (userRole !== 'Lead Architect' && typeof currentBalance === 'number' && currentBalance <= 0) {
+      setErrorMsg('insufficient funds receipt cannot be generated at this time');
+      return;
+    }
     if (!merchantName.trim()) {
       setErrorMsg('Merchant name cannot be empty.');
       return;
@@ -214,10 +222,18 @@ export default function ReceiptBuilder({
   };
 
   const handlePrintReceipt = () => {
+    if (userRole !== 'Lead Architect' && typeof currentBalance === 'number' && currentBalance <= 0) {
+      setErrorMsg('insufficient funds receipt cannot be generated at this time');
+      return;
+    }
     window.print();
   };
 
   const handleDownloadHighResPNG = async () => {
+    if (userRole !== 'Lead Architect' && typeof currentBalance === 'number' && currentBalance <= 0) {
+      setErrorMsg('insufficient funds receipt cannot be generated at this time');
+      return;
+    }
     const node = document.getElementById('print-receipt-container');
     if (!node) {
       setErrorMsg('No receipt display canvas loaded to capture.');
@@ -268,6 +284,16 @@ export default function ReceiptBuilder({
         </div>
 
         <form onSubmit={handleCompileReceiptSubmit} noValidate className="space-y-4 text-xs">
+          
+          {userRole !== 'Lead Architect' && typeof currentBalance === 'number' && currentBalance <= 0 && (
+            <div className="p-4 bg-rose-50 dark:bg-rose-950/25 text-rose-700 dark:text-rose-400 rounded-xl font-bold border border-rose-250 dark:border-rose-900/40 flex flex-col items-center justify-center gap-2 text-center my-2">
+              <span className="material-symbols-outlined text-4xl text-rose-600">block</span>
+              <span className="text-sm font-extrabold uppercase tracking-widest text-rose-800 dark:text-rose-300">Account Depleted</span>
+              <span className="text-xs font-bold leading-normal">
+                insufficient funds receipt cannot be generated at this time
+              </span>
+            </div>
+          )}
           
           {successMsg && (
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/25 text-emerald-800 dark:text-emerald-400 rounded-xl font-semibold border border-emerald-100 dark:border-emerald-900/40 flex items-center gap-2">
