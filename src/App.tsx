@@ -259,12 +259,14 @@ export default function App() {
             <nav className="space-y-1">
               {[
                 { key: 'dashboard', label: 'Dashboard Spec', icon: 'dashboard' },
-                { key: 'ai-scenario', label: 'AI Scenario Builder', icon: 'auto_awesome' },
+                ...(workspace.role === 'Lead Architect' ? [{ key: 'ai-scenario', label: 'AI Scenario Builder', icon: 'auto_awesome' }] : []),
                 { key: 'receipts', label: 'Receipt Sandbox', icon: 'receipt_long' },
-                { key: 'audits', label: 'Compliance Audits', icon: 'history_edu' },
+                ...(workspace.role === 'Lead Architect' ? [{ key: 'audits', label: 'Compliance Audits', icon: 'history_edu' }] : []),
                 { key: 'alerts', label: 'Activity Alerts', icon: 'notifications' },
-                { key: 'settings', label: 'Settings & Profile', icon: 'settings' },
-                ...(workspace.role === 'Lead Architect' ? [{ key: 'profiles-panel', label: 'Admin Profile Issuer', icon: 'supervised_user_circle' }] : [])
+                ...(workspace.role === 'Lead Architect' ? [
+                  { key: 'settings', label: 'Settings & Profile', icon: 'settings' },
+                  { key: 'profiles-panel', label: 'Admin Profile Issuer', icon: 'supervised_user_circle' }
+                ] : [])
               ].map(item => (
                 <button
                   key={item.key}
@@ -391,12 +393,14 @@ export default function App() {
                   <nav className="space-y-1">
                     {[
                       { key: 'dashboard', label: 'Dashboard Spec', icon: 'dashboard' },
-                      { key: 'ai-scenario', label: 'AI Scenario Builder', icon: 'auto_awesome' },
+                      ...(workspace.role === 'Lead Architect' ? [{ key: 'ai-scenario', label: 'AI Scenario Builder', icon: 'auto_awesome' }] : []),
                       { key: 'receipts', label: 'Receipt Sandbox', icon: 'receipt_long' },
-                      { key: 'audits', label: 'Compliance Audits', icon: 'history_edu' },
+                      ...(workspace.role === 'Lead Architect' ? [{ key: 'audits', label: 'Compliance Audits', icon: 'history_edu' }] : []),
                       { key: 'alerts', label: 'Activity Alerts', icon: 'notifications' },
-                      { key: 'settings', label: 'Settings & Profile', icon: 'settings' },
-                      ...(workspace.role === 'Lead Architect' ? [{ key: 'profiles-panel', label: 'Admin Profile Issuer', icon: 'supervised_user_circle' }] : [])
+                      ...(workspace.role === 'Lead Architect' ? [
+                        { key: 'settings', label: 'Settings & Profile', icon: 'settings' },
+                        { key: 'profiles-panel', label: 'Admin Profile Issuer', icon: 'supervised_user_circle' }
+                      ] : [])
                     ].map(item => (
                       <button
                         key={item.key}

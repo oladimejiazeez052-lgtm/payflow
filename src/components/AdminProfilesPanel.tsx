@@ -21,7 +21,7 @@ export default function AdminProfilesPanel() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'Fintech Trainer' | 'UX Designer' | 'Developer' | 'Fintech Learner'>('Developer');
+  const role = 'Developer';
   const [businessName, setBusinessName] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [balanceInputType, setBalanceInputType] = useState<'preset' | 'custom'>('preset');
@@ -206,31 +206,16 @@ export default function AdminProfilesPanel() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-500 uppercase block tracking-wider text-[10px]">Business Name / Tenant</label>
-                <input 
-                  type="text"
-                  required
-                  placeholder="Sarah Coffee Café"
-                  value={businessName}
-                  onChange={e => setBusinessName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="font-bold text-slate-500 uppercase block tracking-wider text-[10px]">Role Play Track</label>
-                <select 
-                  value={role} 
-                  onChange={e => setRole(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-slate-200 bg-white rounded-xl focus:outline-none focus:border-blue-500"
-                >
-                  <option value="Fintech Trainer">Fintech Trainer</option>
-                  <option value="UX Designer">UX Designer</option>
-                  <option value="Developer">Developer</option>
-                  <option value="Fintech Learner">Fintech Learner</option>
-                </select>
-              </div>
+            <div className="space-y-1">
+              <label className="font-bold text-slate-500 uppercase block tracking-wider text-[10px]">Business Name / Tenant</label>
+              <input 
+                type="text"
+                required
+                placeholder="Sarah Coffee Café"
+                value={businessName}
+                onChange={e => setBusinessName(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
+              />
             </div>
 
             {/* BALANCE SETTING */}
@@ -359,7 +344,7 @@ export default function AdminProfilesPanel() {
                             <div className="space-y-0.5">
                               <p className="font-bold text-slate-900">{p.firstName} {p.lastName}</p>
                               <p className="font-mono text-[9px] text-slate-400">{p.email}</p>
-                              <p className="text-[9px] font-bold text-blue-650 bg-blue-50/60 border border-blue-100/50 rounded-md px-1 py-0.2 select-none w-fit">{p.role}</p>
+                              <p className="text-[9px] font-bold text-blue-650 bg-blue-50/60 border border-blue-100/50 rounded-md px-1.5 py-0.2 select-none w-fit">Issued Sandbox Account</p>
                             </div>
                           </td>
                           <td className="py-3 text-slate-500 font-semibold">{p.businessName}</td>
