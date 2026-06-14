@@ -20,9 +20,10 @@ import NotificationPanel from './components/NotificationPanel';
 import Error404View from './components/Error404View';
 import Error500View from './components/Error500View';
 import LoadingSkeletonView from './components/LoadingSkeletonView';
+import AdminProfilesPanel from './components/AdminProfilesPanel';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'ai-scenario' | 'receipts' | 'audits' | 'settings' | 'alerts'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'ai-scenario' | 'receipts' | 'audits' | 'settings' | 'alerts' | 'profiles-panel'>('dashboard');
   const [transactions, setTransactions] = useState<SimulatedTransaction[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
@@ -38,24 +39,9 @@ export default function App() {
     return (saved === 'light' || saved === 'dark') ? saved : 'light';
   });
 
-  // Dynamic Auth State with persistent local storage
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    return localStorage.getItem('payflow_logged_in') === 'true';
-  });
-  const [workspace, setWorkspace] = useState<UserWorkspace | null>(() => {
-    try {
-      const saved = localStorage.getItem('payflow_workspace');
-      if (!saved || saved === 'undefined' || saved === 'null') {
-        return null;
-      }
-      return JSON.parse(saved);
-    } catch (err) {
-      console.error('[PayFlow] Failed to parse workspace localStorage state:', err);
-      localStorage.removeItem('payflow_workspace');
-      localStorage.removeItem('payflow_logged_in');
-      return null;
-    }
-  });
+  // Dynamic Auth State - initially always logged out to satisfy re-login directives
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [workspace, setWorkspace] = useState<UserWorkspace | null>(null);
 
   const handleOnboardingComplete = (ws: UserWorkspace) => {
     setWorkspace(ws);
@@ -96,6 +82,28 @@ export default function App() {
     loadWorkspaceState();
   }, []);
 
+  // Dynamic 48-hour validity tracking loop
+  useEffect(() => {
+    if (!isLoggedIn || !workspace || workspace.role === 'Lead Architect' || !workspace.loginTime) {
+      return;
+    }
+
+    const checkExpiration = () => {
+      const elapsedMs = Date.now() - (workspace.loginTime || 0);
+      const limitMs = 48 * 60 * 60 * 1000;
+      const remainingMs = limitMs - elapsedMs;
+
+      if (remainingMs <= 0) {
+        alert("Your 48-hour simulation session has expired. You will be automatically logged out now. Please contact the Lead Architect to grant access.");
+        handleLogActiveSessionOut();
+      }
+    };
+
+    checkExpiration();
+    const interval = setInterval(checkExpiration, 10000); // Check every 10 seconds
+    return () => clearInterval(interval);
+  }, [isLoggedIn, workspace]);
+
   // Submit New Simulated Transaction
   const handleSimulateTransactionSubmit = async (data: {
     amount: number;
@@ -113,6 +121,31 @@ export default function App() {
     // Auto-select for receipt generation and switch active tab instantly
     setSelectedTxFromDashboard(newTx);
     setActiveTab('receipts');
+
+    // Reduce standard user's issued profile balance
+    if (workspace && workspace.role !== 'Lead Architect' && typeof workspace.currentBalance === 'number') {
+      const reduction = Math.abs(data.amount);
+      const updatedBalance = Math.max(0, workspace.currentBalance - reduction);
+      const updatedWorkspace = {
+        ...workspace,
+        currentBalance: updatedBalance
+      };
+      setWorkspace(updatedWorkspace);
+
+      const savedProfilesStr = localStorage.getItem('payflow_profiles');
+      if (savedProfilesStr) {
+        try {
+          const profiles = JSON.parse(savedProfilesStr);
+          const i = profiles.findIndex((p: any) => p.email.toLowerCase() === workspace.email.toLowerCase());
+          if (i !== -1) {
+            profiles[i].currentBalance = updatedBalance;
+            localStorage.setItem('payflow_profiles', JSON.stringify(profiles));
+          }
+        } catch (err) {
+          console.error("Failed to reduce profile balance in localStorage", err);
+        }
+      }
+    }
   };
 
   // Reset core storage
@@ -130,6 +163,38 @@ export default function App() {
     setTransactions((prev) => [...newTxs, ...prev]);
     const updatedLogs = await fetchAuditLogs();
     setAuditLogs(updatedLogs);
+
+    // Reduce balance by completed simulated transaction sum
+    if (workspace && workspace.role !== 'Lead Architect' && typeof workspace.currentBalance === 'number') {
+      let sum = 0;
+      newTxs.forEach(t => {
+        if (t.status === 'Completed') {
+          sum += Math.abs(t.amount);
+        }
+      });
+      if (sum > 0) {
+        const updatedBalance = Math.max(0, workspace.currentBalance - sum);
+        const updatedWorkspace = {
+          ...workspace,
+          currentBalance: updatedBalance
+        };
+        setWorkspace(updatedWorkspace);
+
+        const savedProfilesStr = localStorage.getItem('payflow_profiles');
+        if (savedProfilesStr) {
+          try {
+            const profiles = JSON.parse(savedProfilesStr);
+            const i = profiles.findIndex((p: any) => p.email.toLowerCase() === workspace.email.toLowerCase());
+            if (i !== -1) {
+              profiles[i].currentBalance = updatedBalance;
+              localStorage.setItem('payflow_profiles', JSON.stringify(profiles));
+            }
+          } catch (err) {
+            console.error("Failed to update scenario profiles", err);
+          }
+        }
+      }
+    }
   };
 
   // Callback of receipt compilations
@@ -198,7 +263,8 @@ export default function App() {
                 { key: 'receipts', label: 'Receipt Sandbox', icon: 'receipt_long' },
                 { key: 'audits', label: 'Compliance Audits', icon: 'history_edu' },
                 { key: 'alerts', label: 'Activity Alerts', icon: 'notifications' },
-                { key: 'settings', label: 'Settings & Profile', icon: 'settings' }
+                { key: 'settings', label: 'Settings & Profile', icon: 'settings' },
+                ...(workspace.role === 'Lead Architect' ? [{ key: 'profiles-panel', label: 'Admin Profile Issuer', icon: 'supervised_user_circle' }] : [])
               ].map(item => (
                 <button
                   key={item.key}
@@ -329,7 +395,8 @@ export default function App() {
                       { key: 'receipts', label: 'Receipt Sandbox', icon: 'receipt_long' },
                       { key: 'audits', label: 'Compliance Audits', icon: 'history_edu' },
                       { key: 'alerts', label: 'Activity Alerts', icon: 'notifications' },
-                      { key: 'settings', label: 'Settings & Profile', icon: 'settings' }
+                      { key: 'settings', label: 'Settings & Profile', icon: 'settings' },
+                      ...(workspace.role === 'Lead Architect' ? [{ key: 'profiles-panel', label: 'Admin Profile Issuer', icon: 'supervised_user_circle' }] : [])
                     ].map(item => (
                       <button
                         key={item.key}
@@ -390,7 +457,14 @@ export default function App() {
                     onSelectTransactionReceipt={handleSelectTransactionReceipt}
                     currency={workspace.currency}
                     businessName={workspace.businessName}
+                    initialBalance={workspace.initialBalance}
+                    currentBalance={workspace.currentBalance}
+                    userRole={workspace.role}
                   />
+                )}
+
+                {activeTab === 'profiles-panel' && workspace.role === 'Lead Architect' && (
+                  <AdminProfilesPanel />
                 )}
 
                 {activeTab === 'ai-scenario' && (

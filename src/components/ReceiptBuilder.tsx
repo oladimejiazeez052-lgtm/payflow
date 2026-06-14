@@ -291,9 +291,9 @@ export default function ReceiptBuilder({
               onChange={(e) => handleTxAssociationChange(e.target.value)}
               className="px-3 py-2 w-full border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 rounded-xl transition bg-white dark:bg-slate-950 text-slate-800 dark:text-white block"
             >
-              <option value="">-- No Direct Link Required --</option>
-              {transactions.map(t => (
-                <option key={t.id} value={t.id}>
+              <option key="no-link-req" value="">-- No Direct Link Required --</option>
+              {transactions.map((t, idx) => (
+                <option key={`tx-option-${t.id || idx}-${idx}`} value={t.id}>
                   {t.id} - {t.sender} Payout (${Math.abs(t.amount).toFixed(2)})
                 </option>
               ))}

@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 
 export interface UserWorkspace {
-  role: 'Fintech Trainer' | 'UX Designer' | 'Developer' | 'Fintech Learner' | '';
+  role: 'Fintech Trainer' | 'UX Designer' | 'Developer' | 'Fintech Learner' | 'Lead Architect' | '';
   businessName: string;
   currency: string;
   selectedChannels: string[];
   firstName: string;
   lastName: string;
   email: string;
+  loginTime?: number;
+  initialBalance?: number;
+  currentBalance?: number;
+  createdAt?: number;
 }
 
 interface AuthOnboardingProps {
@@ -57,18 +61,98 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
     setOnboardingStep(1);
   };
 
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleLoginDemo = (e: React.FormEvent) => {
     e.preventDefault();
-    // Default config fast-track
-    onComplete({
-      role: 'Developer',
-      businessName: 'Coffee & Bytes Café',
-      currency: 'USD',
-      selectedChannels: ['Zelle', 'Venmo', 'Cash App', 'Bank Transfer'],
-      firstName: 'Sarah',
-      lastName: 'Jenkins',
-      email: email || 'oladimejiazeez052@gmail.com'
-    });
+    setErrorMessage('');
+
+    const targetEmail = email.trim().toLowerCase();
+    const targetPassword = password;
+
+    if (!targetEmail) {
+      setErrorMessage("Please enter an email address.");
+      return;
+    }
+    if (!targetPassword) {
+      setErrorMessage("Please enter your password.");
+      return;
+    }
+
+    // 1. Check if login is Lead Architect profile
+    if (targetEmail === 'oladimejiazeez052@gmail.com') {
+      if (targetPassword === 'Architect2026!') {
+        onComplete({
+          role: 'Lead Architect',
+          businessName: 'Lead Architect Console',
+          currency: 'USD',
+          selectedChannels: ['Zelle', 'Venmo', 'Cash App', 'Bank Transfer', 'Apple Pay'],
+          firstName: 'Oladimeji',
+          lastName: 'Azeez',
+          email: 'oladimejiazeez052@gmail.com',
+          loginTime: Date.now(),
+          initialBalance: 10000000.00,
+          currentBalance: 10000000.00,
+          createdAt: Date.now()
+        });
+        return;
+      } else {
+        setErrorMessage("Access Denied: Invalid password for the Lead Architect Admin profile!");
+        return;
+      }
+    }
+
+    // 2. Check general created profiles
+    const savedProfilesStr = localStorage.getItem('payflow_profiles');
+    let profiles: any[] = [];
+    if (savedProfilesStr) {
+      try {
+        profiles = JSON.parse(savedProfilesStr);
+      } catch (err) {
+        console.error("Failed to parse payflow_profiles", err);
+      }
+    }
+
+    const matchedProfileIdx = profiles.findIndex(p => p.email.trim().toLowerCase() === targetEmail);
+    if (matchedProfileIdx !== -1) {
+      const match = profiles[matchedProfileIdx];
+      if (match.password === targetPassword) {
+        const now = Date.now();
+        
+        // Expiration check: 48 hours
+        if (match.loginTime && (now - match.loginTime > 48 * 60 * 60 * 1000)) {
+          setErrorMessage("Profile Expired: This sandbox profile has expired after 48 hours of use. Please contact the Lead Architect.");
+          return;
+        }
+
+        // Set login time if not set yet
+        if (!match.loginTime) {
+          match.loginTime = now;
+          profiles[matchedProfileIdx] = match;
+          localStorage.setItem('payflow_profiles', JSON.stringify(profiles));
+        }
+
+        onComplete({
+          role: match.role || 'Developer',
+          businessName: match.businessName || 'Acme Corp',
+          currency: match.currency || 'USD',
+          selectedChannels: match.selectedChannels || ['Zelle', 'Venmo', 'Cash App', 'Bank Transfer', 'Apple Pay'],
+          firstName: match.firstName || 'Sarah',
+          lastName: match.lastName || 'Jenkins',
+          email: match.email,
+          loginTime: match.loginTime,
+          initialBalance: Number(match.initialBalance) || 5000,
+          currentBalance: match.currentBalance !== undefined ? Number(match.currentBalance) : (Number(match.initialBalance) || 5000),
+          createdAt: match.createdAt || now
+        });
+        return;
+      } else {
+        setErrorMessage("Access Denied: Incorrect password. Please try again.");
+        return;
+      }
+    }
+
+    setErrorMessage("Access Denied: Profile details not found. Only profiles created by the Lead Architect are authorized.");
   };
 
   return (
@@ -105,6 +189,13 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
             </div>
 
             <div className="bg-white border border-slate-200 shadow-xl rounded-2xl p-6 md:p-8">
+              {errorMessage && (
+                <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-[11px] font-bold flex gap-2 items-center">
+                  <span className="material-symbols-outlined text-lg">error</span>
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
               <form onSubmit={handleLoginDemo} noValidate className="space-y-4 text-xs">
                 
                 <div className="space-y-1">
@@ -126,7 +217,6 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <label htmlFor="login-password" className="font-semibold text-slate-500 uppercase tracking-wider block">Password</label>
-                    <button type="button" className="text-blue-600 hover:underline font-bold text-[10px]">Forgot Password?</button>
                   </div>
                   <div className="relative font-bold">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">lock</span>
@@ -159,37 +249,15 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
 
               </form>
 
-              <div className="mt-6 flex flex-col items-center gap-3">
-                <div className="flex items-center w-full gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                  <div className="h-[1px] flex-grow bg-slate-200"></div>
-                  <span>OR CONTINUE WITH</span>
-                  <div className="h-[1px] flex-grow bg-slate-200"></div>
-                </div>
-
-                <div className="flex gap-3 w-full">
-                  <button
-                    type="button"
-                    onClick={handleLoginDemo}
-                    className="flex-1 h-11 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 transition-colors bg-white font-normal"
-                  >
-                    <img 
-                      referrerPolicy="no-referrer"
-                      alt="Google logo" 
-                      className="w-5 h-5 mr-2" 
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7RcIAUZE9I7UG7fL_QHsg1Cru-vIYZFbu7QMBofa7iqPDQfdsH3dR6Pgxq5CcYkpgYzBtP2QcBKqeU6OjV1AjQR9D4gaZSSUnwKAMBH46BmP7hw0sswgtVI7JYzkDbKCNrS_DSVcq9I1lGG-s-gi8bmzUoRTrrCUGuYET0GM7iTnn_GZFIsOOogPTs7fiSxCE_YbLFEptY93CVeuTf1KBtqjFAAry6j4S_1aWVuY-MLq6qO3a1CTW2xTxWC3PI8Yu5Wd2yl4zDpE"
-                    />
-                    <span className="text-[11px] font-bold text-slate-700">Google Fast Sign-in</span>
-                  </button>
-                </div>
+              {/* Admin login helper details badge */}
+              <div className="mt-6 p-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
+                <span className="text-[10px] font-extrabold text-blue-800 tracking-wider uppercase block mb-1">Lead Architect Access</span>
+                <p className="text-[10px] text-blue-700 leading-normal">
+                  Login with Lead Architect email <strong className="font-bold underline">oladimejiazeez052@gmail.com</strong> and password <strong className="font-bold select-all bg-blue-100 px-1 rounded">Architect2026!</strong> to access administration controls and issue new profiles.
+                </p>
               </div>
-            </div>
 
-            <p className="text-center mt-6 text-xs text-slate-500 font-medium">
-              Don't have an account?{' '}
-              <button onClick={() => setView('register')} className="text-blue-600 font-bold hover:underline">
-                Sign up for free
-              </button>
-            </p>
+            </div>
           </div>
         )}
 

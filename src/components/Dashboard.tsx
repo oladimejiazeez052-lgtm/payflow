@@ -9,6 +9,9 @@ interface DashboardProps {
   onSelectTransactionReceipt: (tx: SimulatedTransaction) => void;
   currency?: string;
   businessName?: string;
+  initialBalance?: number;
+  currentBalance?: number;
+  userRole?: string;
 }
 
 export default function Dashboard({ 
@@ -17,7 +20,10 @@ export default function Dashboard({
   onResetTrigger,
   onSelectTransactionReceipt,
   currency = 'USD',
-  businessName = 'Fintech Transaction Sandbox'
+  businessName = 'Fintech Transaction Sandbox',
+  initialBalance,
+  currentBalance,
+  userRole
 }: DashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChannel, setSelectedChannel] = useState<PaymentChannel | 'All'>('All');
@@ -138,6 +144,48 @@ export default function Dashboard({
           </button>
         </div>
       </div>
+
+      {/* Issued Profile Balance Hero */}
+      {typeof currentBalance === 'number' && userRole !== 'Lead Architect' && (
+        <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-indigo-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl mb-6 border border-blue-600/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid-white/[0.03] bg-[size:16px_16px] pointer-events-none"></div>
+          
+          <div className="space-y-2.5 z-10 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-indigo-200 text-lg animate-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance_wallet</span>
+              <span className="text-xs font-extrabold text-blue-100 uppercase tracking-widest">ISSUED PROFILE WALLET BALANCE</span>
+            </div>
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight">{formatCurrency(currentBalance, currency)}</h2>
+              <p className="text-xs text-indigo-150 mt-1 font-semibold">
+                Initial Allocation: <strong className="text-white">{formatCurrency(initialBalance || 5000, currency)}</strong> • Valid for exactly <strong className="text-emerald-300">48 Hours after login</strong>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex-1 w-full max-w-sm bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 z-10 space-y-2.5 text-xs">
+            <div className="flex justify-between items-center font-bold text-[10px] text-indigo-100">
+              <span>FUNDS DEPLETION PROGRESS</span>
+              <span>{Math.round((currentBalance / (initialBalance || 5000)) * 100)}% REMAINING</span>
+            </div>
+            <div className="w-full bg-white/10 h-3 rounded-full overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-500 rounded-full ${
+                  (currentBalance / (initialBalance || 5000)) > 0.5 
+                    ? 'bg-emerald-400' 
+                    : (currentBalance / (initialBalance || 5000)) > 0.2 
+                    ? 'bg-amber-400' 
+                    : 'bg-rose-500 animate-pulse'
+                }`}
+                style={{ width: `${Math.min(100, Math.max(0, (currentBalance / (initialBalance || 5000)) * 100))}%` }}
+              ></div>
+            </div>
+            <p className="text-[10px] text-indigo-200 font-medium leading-relaxed">
+              Every simulated debit or simulated transfer reduces this profile balance. Sessions expire 48 hours after validation.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Account Balances Widget Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
