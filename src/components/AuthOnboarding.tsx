@@ -249,13 +249,7 @@ export default function AuthOnboarding({ onComplete }: AuthOnboardingProps) {
 
               </form>
 
-              {/* Admin login helper details badge */}
-              <div className="mt-6 p-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
-                <span className="text-[10px] font-extrabold text-blue-800 tracking-wider uppercase block mb-1">Lead Architect Access</span>
-                <p className="text-[10px] text-blue-700 leading-normal">
-                  Login with Lead Architect email <strong className="font-bold underline">oladimejiazeez052@gmail.com</strong> and password <strong className="font-bold select-all bg-blue-100 px-1 rounded">Architect2026!</strong> to access administration controls and issue new profiles.
-                </p>
-              </div>
+
 
             </div>
           </div>
